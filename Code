@@ -1,0 +1,23 @@
+var roi = (file which contains your aoi/geometry)
+// import satellite image collection
+var collection = ee.ImageCollection("COPERNICUS/S1_GRD")
+.filterBounds(roi)
+.select('VV')
+//filter the before and after imagery
+var before = collection.filterDate("2023-11-20","2023-12-15").mosaic()
+var after = collection.filterDate("2023-12-15","2024-01-10").mosaic()
+var before_clip = before.clip(roi)
+var after_clip = after.clip(roi)
+
+//apply smoothening filter
+var before_s = before_clip.focal_median(30,"circle","meters")
+var after_s = after_clip.focal_median(30,"circle","meters")
+//difference
+var difference = after_s.subtract(before_s)
+var flood_extent = difference.lt(-3)
+var flood = flood_extent.updateMask(flood_extent)
+//display maps
+Map.addLayer(before_clip,{min:30,max:0},"before_flood")
+Map.addLayer(after_clip,{min:30,max:0},"after_flood")
+Map.addLayer(difference,{},"difference")
+Map.addLayer(flood,{},"flood")
